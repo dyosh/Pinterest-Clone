@@ -1,0 +1,33 @@
+<div ng-include="'components/navbar/navbar.html'"></div>
+
+<div class="form-container">
+  <h1>Pins</h1>  
+  <button ng-hide="newPenOptions" ng-click="newPenOptions = true">Create new pin</button>
+  <form class="form-block" ng-show="newPenOptions">  
+    <input type="text" class="form-control" ng-model="pin.title" placeholder="pin title"></input>
+    <input type="url" class="form-control" ng-model="pin.url" placeholder="img url"></input>
+    <button class="btn btn-primary" ng-click="createNewPin(pin); newPenOptions = false">Add Pin</button>
+  </form>
+</div>
+
+<div id="wrapper">
+  <div id ="columns">
+    <div ng-repeat="pin in allPins track by $index">
+      <div class="pin">
+        <p>{{pin.title}}</p>
+        <img src="{{pin.url}}"></img>
+        <div class="row">
+          <span>{{pin.author_name}}</span>
+        </div>
+      </div>
+    </div>
+  </div>  
+</div>
+
+
+<footer class="footer">
+  <div class="container">
+      <p>Angular Fullstack v2.1.1 |
+        <a href="http://www.freecodecamp.com/dyosh">dyosh</a>
+  </div>
+</footer>
