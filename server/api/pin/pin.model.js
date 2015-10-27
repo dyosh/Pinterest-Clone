@@ -10,4 +10,11 @@ var PinSchema = new Schema({
   author_name: String
 }, {strict: false});
 
-module.exports = mongoose.model('Pin', PinSchema);
+var PinCollection = new  Schema({
+  author_id: String,
+  author_name: String,
+  collection_name: String,
+  pins: [PinSchema]
+}, {strict: false});
+
+module.exports = mongoose.model('Pin', PinCollection);
