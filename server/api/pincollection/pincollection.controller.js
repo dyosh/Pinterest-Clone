@@ -20,6 +20,17 @@ exports.show = function(req, res) {
   });
 };
 
+// Get all collections of a given USER
+exports.usersCollection = function(req, res) {
+  Pincollection.find({collection_author_id: req.params.id
+  }, function(err, collections) {
+    if (err) {
+      return handleError(res, err);
+    }
+    return res.json(collections);
+  })
+};
+
 // Creates a new pincollection in the DB.
 exports.create = function(req, res) {
   Pincollection.create(req.body, function(err, pincollection) {
@@ -34,7 +45,7 @@ exports.update = function(req, res) {
   Pincollection.findById(req.params.id, function (err, pincollection) {
     if (err) { return handleError(res, err); }
     if(!pincollection) { return res.status(404).send('Not Found'); }
-    var updated = _.merge(pincollection, req.body);
+    var updated = _.extend(pincollection, req.body);
     updated.save(function (err) {
       if (err) { return handleError(res, err); }
       return res.status(200).json(pincollection);

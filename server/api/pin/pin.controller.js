@@ -22,18 +22,6 @@ exports.userPins = function(req ,res) {
   });
 };
 
-// Get a list of *USERS COLLECTIONS*
-exports.userCollections = function(req, res) {
-  Pin.find({author_id: req.params.authorId
-  }, function(err, collections) {
-    if (err) {
-      return handleError(res, err);
-    }
-    return res.json(collections);
-  });
-
-};
-
 // Get a single pin
 exports.show = function(req, res) {
   Pin.findById(req.params.id, function (err, pin) {
@@ -50,21 +38,6 @@ exports.create = function(req, res) {
     return res.status(201).json(pin);
   });
 };
-
-// Updates an existing collection in the DB
-exports.updateCollection = function(req, res) {
-  if(req.body._id) { delete req.body._id; }
-  Pin.findById(req.params.id, function (err, collection) {
-    if (err) { return handleError(res, err); }
-    if (!collection) { return res.status(404).send('Not Found'); }
-    var updated = _.extend(collection, req.body);
-    updated.save(function (err) {
-      if (err) { return handleError(res, err); }
-      return res.status(200).json(collection);
-    })
-  })
-};
-
 
 // Updates an existing pin in the DB.
 exports.update = function(req, res) {

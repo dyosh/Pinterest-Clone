@@ -8,81 +8,69 @@ angular.module('pinterestApp')
   $scope.isAdmin = Auth.isAdmin;
   $scope.getCurrentUser = Auth.getCurrentUser;    
 
-  $scope.createNewPin = function(pinCollection, pin) {
+  $scope.createNewCollection = function(pinCollection, pin) {
     pin['author_id'] = $scope.getCurrentUser()._id;
     pin['author_name'] = $scope.getCurrentUser().name;
 
-    pinCollection['pins'] = pin;
-    pinCollection['author_id'] = $scope.getCurrentUser()._id;
-    pinCollection['author_name'] = $scope.getCurrentUser().name;
+    pinCollection['collection_author_id'] = $scope.getCurrentUser()._id;
+    pinCollection['collection_author_name'] = $scope.getCurrentUser().name;
 
-    $http.post('/api/pins/', pinCollection).success(function(response) {
+    $http.post('/api/pins/', pin).success(function(response) {
       console.log(response);
-      $scope.getUsersPins();
+      pinCollection['pins'] = response;
+      $http.post('/api/pincollections/', pinCollection).success(function(response) {
+        console.log(response);
+      })
     });
   };
 
   $scope.getUsersPins = function() {
-    $scope.usersPinsArray = [];
-
-    $http.get('/api/pins/userPins/collections/' + $scope.getCurrentUser()._id).success(function(response) {
+    $http.get('/api/pins/userPins/' + $scope.getCurrentUser()._id).success(function(response) {
       console.log(response);
-      
-      for (var i = 0; i < response.length; i++) {
-        for (var j = 0; j < response[i].pins.length; j++) {
-          console.log(response[i].pins[j].title);
-        }
-      }
-      
-    });  
+      $scope.allOfUsersPins = response;
+    });
   };
-  // fetch data when page is loaded
-  // $scope.getUsersPins();
 
   $scope.getUsersCollections = function() {
-    $http.get('/api/pins/userPins/collections/' + $scope.getCurrentUser()._id).success(function(response) {
+    $http.get('/api/pincollections/usersCollections/' + $scope.getCurrentUser()._id).success(function(response) {
       console.log(response);
       $scope.usersCollections = response;
     });  
   };
+  // fetch collections when page is loaded
   $scope.getUsersCollections();
 
+  $scope.showAddToCollection = function(collection) {
+    $scope.collectionToEdit = collection;
+    $scope.showAddPinToCollectionBox = true;
+  };
+
+  $scope.addToCollection = function(newPin) {
+    newPin['author_name'] = $scope.getCurrentUser().name;
+    newPin['author_id'] = $scope.getCurrentUser()._id;
+
+    $http.post('/api/pins/', newPin).success(function(response) {
+      console.log(response);
+      $scope.collectionToEdit.pins.push(response);
+      
+      $http.put('/api/pinCollections/' + $scope.collectionToEdit._id, $scope.collectionToEdit).success(function(response) {
+        console.log(response);
+        $scope.showAddPinToCollectionBox = false;
+      })
+    });
+  };  
+  
   $scope.showPinsInCollection = function(collection) {
     $scope.collection = collection;
     $scope.showPins = true;
-  };
-
-  $scope.addToCollection = function(newPin, collection) {
-    newPin['author_name'] = $scope.getCurrentUser().name;
-    newPin['author_id'] = $scope.getCurrentUser()._id;
-    collection.pins.push(newPin);
-
-    console.log(collection);
-
-    $http.put('/api/pins/userPins/collections/addPinToCollection/' + collection._id, collection).success(function(response) {
-      console.log(response);
-    });
   };  
-
-  $scope.deletePin = function(pin) {
-    console.log(pin);
-
-    // remove pin from collection
-    $http.delete('/api/pins/' + pin._id).then(function() {
-      $scope.showDeleteBox = false;
-      $scope.showPinEdit = false;
-      var test = document.getElementById('wrapper');
-      test.style.opacity = 1.0;
-      $scope.getUsersPins();
-    });
-  };   
 
   $scope.editPin = function(selectedPin, collection, index) {
     var test = document.getElementById('wrapper');
     test.style.opacity = 0.4;
     $scope.showPinEdit  = true;
     $scope.pinToEdit = selectedPin;
-    $scope.pinToEditCollection = collection;
+    $scope.collectionToEdit = collection;
     $scope.pinToEditIndex = index;
 
     $scope.titleHolder = selectedPin.title;
@@ -90,35 +78,33 @@ angular.module('pinterestApp')
   };  
 
   $scope.submitEdit = function(updatedPin) {
-    updatedPin['author_name'] = $scope.getCurrentUser().name;
-    updatedPin['author_id'] = $scope.getCurrentUser()._id;
+    $scope.collectionToEdit.pins[$scope.pinToEditIndex] = updatedPin;
+    console.log(updatedPin);
+    console.log($scope.collectionToEdit);
 
-    $scope.pinToEditCollection.pins[$scope.pinToEditIndex] = updatedPin;
-    console.log($scope.pinToEditCollection);
-
-    $http.put('/api/pins/userPins/collections/addPinToCollection/' + $scope.pinToEditCollection._id, $scope.pinToEditCollection).success(function(response) {
+    $http.put('/api/pins/' + updatedPin._id, updatedPin).success(function(response) {
       console.log(response);
-      $scope.getUsersPins;
-      var test = document.getElementById('wrapper');
-      test.style.opacity = 1.0;
-      $scope.showPinEdit = false;
+      $http.put('/api/pinCollections/' + $scope.collectionToEdit._id, $scope.collectionToEdit).success(function(response) {
+        console.log(response);
+        $scope.getUsersPins;
+        var test = document.getElementById('wrapper');
+        test.style.opacity = 1.0;
+        $scope.showPinEdit = false;
 
-      // Lets variables be garbage collected to prevent mem leaks?
-      $scope.pinToEdit = null; 
-      $scope.pinToEditCollection = null;
-      $scope.pinToEditIndex = null;
+        // Lets variables be garbage collected to prevent mem leaks?
+        $scope.pinToEdit = null; 
+        $scope.collectionToEdit = null;
+        $scope.pinToEditIndex = null;         
+      });
     });
-
   };  
 
   $scope.cancelEdit = function() {
-    // $scope.getUsersPins() used here to prevent name from changing on cancel.
-    // $scope.pinToEdit seems to be referencing $scope.pin memory
     $scope.pinToEdit.title = $scope.titleHolder;
     $scope.pinToEdit.url = $scope.urlHolder;
 
     $scope.pinToEdit = null; 
-    $scope.pinToEditCollection = null;
+    $scope.collectionToEdit = null;
     $scope.pinToEditIndex = null;
 
     $scope.titleHolder = null;
@@ -130,6 +116,29 @@ angular.module('pinterestApp')
     test.style.opacity = 1.0;
   };
 
+  $scope.deletePin = function(pin) {
+    console.log(pin);
+    // variables saved from when edit is clicked
+    // $scope.pinToEdit = selectedPin;
+    // $scope.collectionToEdit = collection;
+    // $scope.pinToEditIndex = index;
+
+    $scope.collectionToEdit.pins.splice($scope.pinToEditIndex, 1);
+
+    // update removed pin from collection
+    $http.put('/api/pinCollections/' + $scope.collectionToEdit._id, $scope.collectionToEdit).success(function(response) {
+      console.log(response);
+      // once complete, delete the pin from the database
+      $http.delete('/api/pins/' + pin._id).then(function() {
+        $scope.showDeleteBox = false;
+        $scope.showPinEdit = false;
+        var test = document.getElementById('wrapper');
+        test.style.opacity = 1.0;
+        $scope.getUsersPins();        
+      });
+    });
+
+  };   
 
 
   });
