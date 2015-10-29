@@ -291,4 +291,10 @@ angular.module('pinterestApp')
     collectionArea.style.opacity = 1.0;
   };
 
-  });
+  $scope.cancelCreateNewCollection = function() {
+    $scope.newPin = null;
+    $scope.newCollection = null;
+    $scope.newCollectionOptions = false;
+  };  
+
+});
