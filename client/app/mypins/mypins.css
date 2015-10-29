@@ -36,7 +36,7 @@
 .form-container {
     text-align: center;
     margin: 0 auto;
-    width: 450px;
+    width: 100%;
 }
 
 
@@ -137,10 +137,14 @@
 }
 
 #pin-edit-box {
-    padding-top: 50px;
-
+    padding-top: 5px;
+    padding-bottom: 40px;
 }
 
+#pin-edit-box-delete {
+    padding-top: 5px;
+    padding-bottom: 40px;
+}
 
 #pin-edit-container {
 
@@ -156,7 +160,6 @@
     left: 50%;
     right: 50%;
     top: 40%;
-    background-color: blue;
     z-index: 100;
 
     /*max-height: 700px;*/
@@ -168,6 +171,36 @@
 
 #pin-edit-container:hover {
     opacity: 1 !important;
+}
+
+.edit-box-btns {
+    padding-top: 15px;
+}
+
+.btn {
+    margin: 5px; 
+}
+
+#pins-within-container-box {
+    /*width: 90%;*/
+    height: 100%;
+    text-align: center;
+    /*border: solid 1px black;*/
+    background-color: #DADADA;
+    position: fixed;
+    left: 50%;
+    right: 50%;
+    top: 28%;
+    z-index: 100;
+    overflow-y: scroll;
+    height: 100%;
+    margin: 0 auto;
+
+    max-height: 825px;
+    margin-top: -200px;
+
+    max-width: 1000px;
+    margin-left: -500px;    
 }
 
 /*#columns:hover .pin:not(:hover) {

@@ -6,5 +6,9 @@ angular.module('pinterestApp')
       .when('/', {
         templateUrl: 'app/main/main.html',
         controller: 'MainCtrl'
+      })
+      .when('/userpage/:author', {
+        templateUrl: 'app/main/userpage.html',
+        controller: 'MainCtrl'
       });
   });

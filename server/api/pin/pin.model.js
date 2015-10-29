@@ -7,7 +7,8 @@ var PinSchema = new Schema({
   title: String,
   url: String,
   author_id: String,
-  author_name: String
+  author_name: String,
+  collection_id: String
 }, {strict: false});
 
 // var PinCollection = new  Schema({

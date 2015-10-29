@@ -1,39 +1,17 @@
 <div ng-include="'components/navbar/navbar.html'"></div>
 
 <div class="form-container">
-  <h1>Pins</h1>  
-  <button ng-hide="newCollectionOptions" ng-click="newCollectionOptions = true">Create new collection</button>
-
-  <button class="btn btn" ng-click="getUsersPins()">Show All Pins</button>
-  <form class="form-block" ng-show="newCollectionOptions">  
-  	<input type="text" class="form-control" ng-model="pinCollection.collection_name" placeholder="Collection"></input>
-    <input type="text" class="form-control" ng-model="pin.title" placeholder="Pin title"></input>
-    <input type="url" class="form-control" ng-model="pin.url" placeholder="Img URL"></input>
-    <button class="btn btn-primary" ng-click="createNewCollection(pinCollection, pin); newCollectionOptions = false">Add Pin</button>
-  </form>
+  <button class="btn btn-primary" ng-click="newCollectionOptions = true">Create new collection</button>
+  <button class="btn btn" ng-click="showCollections = true; showAllPins = false; getUsersCollections()">Show Collections</button>
+  <button class="btn btn-primary" ng-click="newPinOptions = true">Create new pin</button>
+  <button class="btn btn" ng-click="showAllPins = true; showCollections = false; getUsersPins()">All My Pins</button>
 </div>
 
-<!-- Shows users collections -->
-<div id="wrapper">
-  <div id ="columns">
-    <div ng-repeat="collection in usersCollections track by $index">
-      <div class="pin">
-        <h1>{{collection.collection_name}}</h1>
-        <img src="{{collection.pins[0].url}}" ng-click="showPinsInCollection(collection)"></img>
-        <div class="row">
-          <span>{{collection.collection_author_name}}</span>
-          <button class="pin-edit-btn" ng-click="showAddToCollection(collection)">Add Pin to Collection</button>
-        </div>
-      </div>
-    </div>
-  </div>  
-</div>
-
-<div class="pin" id="pin-edit-container" ng-show="showAddPinToCollectionBox">
+<!-- Adding new pin box -->
+<div class="pin" id="pin-edit-container" ng-show="newPinOptions">
     <div class="col-md-5 col-sm-5 col-xs-5">
-      <h1>{{newPin.title}}</h1>
-      <img src="{{newPin.url}}"></img>
-      <p>{{newPin.author_name}}</p>
+      <h4>{{newPin.title || "Pin Title" }}</h4>  
+      <img src="{{newPin.url || imagePlaceholderURL}}"></img>
     </div>
 
     <div id="pin-edit-box" class="col-md-7 col-sm-7 col-xs-7">
@@ -44,39 +22,144 @@
           <input type="text" class="form-control" placeholder="Pin title" ng-model="newPin.title"></input>
           <h4>Image URL</h4>
           <input type="url" class="form-control" placeholder="Image URL" ng-model="newPin.url"></input>
-          <button ng-click="showAddPinToCollectionBox = false">Cancel</button>
-          <button ng-click="addToCollection(newPin)">Submit</button>
+          <div class="edit-box-btns">
+            <button class="btn btn-warning" ng-click="newPinOptions = false">Cancel</button>
+            <button class="btn btn-primary" ng-click="createNewPin(newPin); newPinOptions = false">Submit</button>
+          </div>
         </form>
       </div>
     </div>
-</div> 
-<!-- ENDOF Shows users collections -->
+</div>
+<!-- ENDOF Adding new pin box -->
 
-<!-- Shows pins within a collection -->
-<div id="wrapper" ng-show="showPins">
-  <div id ="columns">
-    <div ng-repeat="pin in collection.pins track by $index">
-      <div class="pin">
-        <p>{{pin.title}}</p>
-        <img src="{{pin.url}}"></img>
-        <div class="row">
-          <span>{{pin.author_name}}</span>
-          <button class="pin-edit-btn" ng-click="editPin(pin, collection, $index)">Edit</button>
+<!-- Adding new collection box -->
+<div ng-show="newCollectionOptions">
+  <div class="pin" id="pin-edit-container" ng-show="newCollectionOptions">
+      <div class="col-md-5 col-sm-5 col-xs-5">
+        <h3>{{newCollection.collection_name || "Collection"}}</h3>
+        <h4>{{newPin.title || "Pin Title" }}</h4>  
+        <img src="{{newPin.url || imagePlaceholderURL}}"></img>
+      </div>
+
+      <div id="pin-edit-box" class="col-md-7 col-sm-7 col-xs-7">
+        <div> 
+          <h1>Add Pin</h1>
+          <form>
+            <h4>Collection Title</h4>
+            <input type="text" class="form-control" placeholder="Collection title" ng-model="newCollection.collection_name"></input>
+            <h4>Pin Title</h4>
+            <input type="text" class="form-control" placeholder="Pin title" ng-model="newPin.title"></input>
+            <h4>Image URL</h4>
+            <input type="url" class="form-control" placeholder="Image URL" ng-model="newPin.url"></input>
+            <div class="edit-box-btns">
+              <button class="btn btn-warning" ng-click="newCollectionOptions = false">Cancel</button>
+              <button class="btn btn-primary" ng-click="createNewCollection(newCollection, newPin); newCollectionOptions = false">Submit</button>
+            </div>
+          </form>
         </div>
       </div>
-    </div>
-  </div>  
+  </div> 
 </div>
-<!-- ENDOF Shows pins within a collection -->
+<!-- ENDOF Adding new collection box -->
 
+<!-- Shows users collections -->
+<div ng-show="showCollections">
+  <h1 style="text-align: center">My Collections</h1>
+  <div id="wrapper">
+    <div id ="columns">
+      <div ng-repeat="collection in usersCollections track by $index">
+        <div class="pin">
+          <h3>{{collection.collection_name}}</h3>
+          <img src="{{collection.pins[0].url}}" ng-click="showPinsInCollection(collection)"></img>
+          <div class="row">
+            <span>{{collection.collection_author_name}}</span>
+            <button class="pin-edit-btn" ng-click="showAddToCollection(collection, $index)">Add Pin to Collection</button>
+          </div>
+        </div>
+      </div>
+    </div>  
+  </div>
+
+  <!-- Shows pins within a collection -->
+  <div id="wrapper" ng-show="showPins">
+    <div class="col-md-12" id="pins-within-container-box">
+      <div>
+        <h3>{{collection.collection_name}}</h3>
+        <button ng-click="showPins = false">Close</button>    
+      </div>
+
+      <div id ="columns">
+        <div ng-repeat="pin in collection.pins track by $index">
+          <div class="pin">
+            <h4>{{pin.title}}</h4>
+            <img src="{{pin.url}}"></img>
+            <div class="row">
+              <span>{{pin.author_name}}</span>
+              <button class="pin-edit-btn" ng-click="editPin(pin, collection, $index)">Edit</button>
+            </div>
+          </div>
+        </div>
+      </div>  
+   </div>
+  </div>
+  <!-- ENDOF Shows pins within a collection -->  
+
+  <!-- Shows add pin to collection box -->
+  <div class="pin" id="pin-edit-container" ng-show="showAddPinToCollectionBox">
+      <div class="col-md-5 col-sm-5 col-xs-5">
+        <h3>{{collectionToEdit.collection_name}}</h3>
+        <h4>{{newPin.title || "Pin Title"}}</h4>
+        <img src="{{newPin.url || imagePlaceholderURL}}"></img>
+      </div>
+
+      <div id="pin-edit-box" class="col-md-7 col-sm-7 col-xs-7">
+        <div> 
+          <h1>Add Pin</h1>
+          <form>
+            <h4>Pin Title</h4>
+            <input type="text" class="form-control" placeholder="Pin title" ng-model="newPin.title"></input>
+            <h4>Image URL</h4>
+            <input type="url" class="form-control" placeholder="Image URL" ng-model="newPin.url"></input>
+            <div class="edit-box-btns">
+              <button class="btn btn-warning" ng-click="showAddPinToCollectionBox = false; newPin = null">Cancel</button>
+              <button class="btn btn-primary" ng-click="addToCollection(newPin)">Submit</button>
+            </div>
+          </form>
+        </div>
+      </div>
+  </div> 
+  <!-- ENDOF Shows add pin to collection box -->
+
+</div>
+<!-- ENDOF showCollections -->
+
+
+<div ng-show="showAllPins" ng-hide="showCollections">
+  <h1 style="text-align: center">My Pins</h1>
+  <div id="wrapper">
+    <div id ="columns">
+      <div ng-repeat="pin in allUsersPins">
+        <div class="pin">
+          <h4>{{pin.title}}</h4>
+          <img src="{{pin.url}}"></img>
+          <div class="row">
+            <span>{{pin.author_name}}</span>
+            <button class="pin-edit-btn" ng-click="editPin(pin)">Edit</button>
+          </div>
+        </div>
+      </div>
+    </div>  
+  </div>
+</div>
+
+<!-- Show edit pin box -->
 <div class="pin" id="pin-edit-container" ng-show="showPinEdit">
   <!-- <div class="row"> -->
     
-    <div class="col-md-5 col-sm-5 col-xs-5">
-      <h1>{{pinToEdit.title}}</h1>
-      <img src="{{pinToEdit.url}}"></img>
-      <p>{{pinToEdit.author_name}}</p>
-      <button class="btn btn-danger" ng-hide="showDeleteBox" ng-click="showDeleteBox = true">Delete</button>
+    <div id="del-box-area" class="col-md-5 col-sm-5 col-xs-5">
+      <h4>{{pinToEdit.title || "Pin Title"}}</h4>
+      <img src="{{pinToEdit.url || imagePlaceholderURL}}"></img>
+      <button class="btn btn-danger" ng-hide="showDeleteBox" ng-click="deleteBtnPressed()">Delete</button>
 
       <div ng-show="showDeleteBox"> 
         <h4>This will <strong>permanently</strong> delete this pin</h4>
@@ -84,28 +167,33 @@
         <button class="btn btn-warning" ng-click="showDeleteBox = false">Cancel</button>
         <button class="btn btn-danger" ng-click="deletePin(pinToEdit)">Delete</button>
       </div>
-
     </div>
 
-    <div id="pin-edit-box" class="col-md-7 col-sm-7 col-xs-7">
+    <div id="pin-edit-box-delete" class="col-md-7 col-sm-7 col-xs-7">
       <div> 
         <h1>Edit Pin</h1>
         <form>
+          <h4>Pin Title</h4>
           <input type="text" class="form-control" ng-model="pinToEdit.title"></input>
+          <h4>Image URL</h4>
           <input type="url" class="form-control" ng-model="pinToEdit.url"></input>
-          <button ng-click="cancelEdit(); showDeleteBox = false;">Cancel</button>
-          <button ng-click="submitEdit(pinToEdit); showDeleteBox = false">Submit</button>
+
+          <div class="edit-box-btns">
+            <button class="btn btn-warning" ng-click="cancelEdit(); showDeleteBox = false;">Cancel</button>
+            <button class="btn btn-danger" ng-click="submitEdit(pinToEdit); showDeleteBox = false">Submit</button>
+          </div>
         </form>
       </div>
     </div>
 
   <!-- </div> -->
 </div>  
+<!-- ENDOF Show edit pin box -->
 
 
 <footer class="footer">
   <div class="container">
       <p>Angular Fullstack v2.1.1 |
-        <a href="http://www.freecodecamp.com/dyosh">dyosh</a>
+        <a href="http://www.github.com/dyosh">dyosh</a>
   </div>
 </footer>

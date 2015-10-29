@@ -6,7 +6,18 @@ angular.module('pinterestApp')
   $scope.isCollapsed = true;
   $scope.isLoggedIn = Auth.isLoggedIn;
   $scope.isAdmin = Auth.isAdmin;
-  $scope.getCurrentUser = Auth.getCurrentUser;    
+  $scope.getCurrentUser = Auth.getCurrentUser;
+
+  $scope.imagePlaceholderURL = "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcQgZtN9b4_6dJQzovDjx2EIgRjBYhcImELi_EBCkmNUc6xJUaHmmA";    
+
+  $scope.createNewPin = function(newPin) {
+    newPin['author_id'] = $scope.getCurrentUser()._id;
+    newPin['author_name'] = $scope.getCurrentUser().name;
+
+    $http.post('/api/pins/', newPin).success(function(response) {
+      console.log(response);
+    });
+  };
 
   $scope.createNewCollection = function(pinCollection, pin) {
     pin['author_id'] = $scope.getCurrentUser()._id;
@@ -17,17 +28,42 @@ angular.module('pinterestApp')
 
     $http.post('/api/pins/', pin).success(function(response) {
       console.log(response);
+      $scope.pinWith_id = response;
       pinCollection['pins'] = response;
       $http.post('/api/pincollections/', pinCollection).success(function(response) {
-        console.log(response);
-      })
+        // add the collections _id to the pin to keep track of whether or not a pin
+        // belongs to a collection or not.
+        // have to repost with updated collection_id on pin. unfortunate :(, super expensive to do this.
+        var finalNewPinUpdate = response.pins[0];
+        finalNewPinUpdate['collection_id'] = response._id;
+
+        var finalNewCollection = response;
+        finalNewCollection.pins[0] = finalNewPinUpdate
+
+        console.log(finalNewPinUpdate);
+        console.log(finalNewCollection);
+
+        // better way to do this than chaining? Should chain both put requests together, then
+        // populate on screen, but not sure how.
+        $http.put('/api/pins/' + finalNewPinUpdate._id, finalNewPinUpdate).success(function(response) {
+          console.log("PIN UPDATED SUCCESSFULLY");
+        }).then(function() {
+          $http.put('/api/pinCollections/' + finalNewCollection._id, finalNewCollection).success(function(response) {
+            console.log("COLLECTION UPDATED SUCCESSFULLY");
+          }).then(function() {
+            $scope.newPin = null;     
+            $scope.getUsersCollections();
+          });
+        });
+      });
+
     });
   };
 
   $scope.getUsersPins = function() {
     $http.get('/api/pins/userPins/' + $scope.getCurrentUser()._id).success(function(response) {
       console.log(response);
-      $scope.allOfUsersPins = response;
+      $scope.allUsersPins = response;
     });
   };
 
@@ -39,15 +75,18 @@ angular.module('pinterestApp')
   };
   // fetch collections when page is loaded
   $scope.getUsersCollections();
+  $scope.showCollections = true;
 
-  $scope.showAddToCollection = function(collection) {
+  $scope.showAddToCollection = function(collection, index) {
     $scope.collectionToEdit = collection;
+    $scope.collectionToEditIndex = index;
     $scope.showAddPinToCollectionBox = true;
   };
 
   $scope.addToCollection = function(newPin) {
     newPin['author_name'] = $scope.getCurrentUser().name;
     newPin['author_id'] = $scope.getCurrentUser()._id;
+    newPin['collection_id'] = $scope.collectionToEdit._id;
 
     $http.post('/api/pins/', newPin).success(function(response) {
       console.log(response);
@@ -56,6 +95,11 @@ angular.module('pinterestApp')
       $http.put('/api/pinCollections/' + $scope.collectionToEdit._id, $scope.collectionToEdit).success(function(response) {
         console.log(response);
         $scope.showAddPinToCollectionBox = false;
+
+        // TODO: this call to the db is unnecessary, fix this simple solution later. 
+        $scope.getUsersCollections();
+
+        $scope.newPin = null;     
       })
     });
   };  
@@ -78,25 +122,56 @@ angular.module('pinterestApp')
   };  
 
   $scope.submitEdit = function(updatedPin) {
-    $scope.collectionToEdit.pins[$scope.pinToEditIndex] = updatedPin;
-    console.log(updatedPin);
-    console.log($scope.collectionToEdit);
 
-    $http.put('/api/pins/' + updatedPin._id, updatedPin).success(function(response) {
-      console.log(response);
-      $http.put('/api/pinCollections/' + $scope.collectionToEdit._id, $scope.collectionToEdit).success(function(response) {
+    var updatePinInCollection = function(updatedPin, collection, index) {
+      $http.put('/api/pins/' + updatedPin._id, updatedPin).success(function(response) {
         console.log(response);
-        $scope.getUsersPins;
+        $http.put('/api/pinCollections/' + collection._id, collection).success(function(response) {
+          console.log(response);
+          $scope.collection = response;
+          var test = document.getElementById('wrapper');
+          test.style.opacity = 1.0;
+          $scope.showPinEdit = false;
+
+          // Lets variables be garbage collected faster to prevent mem leaks?
+          $scope.pinToEdit = null; 
+          $scope.collectionToEdit = null;
+          $scope.pinToEditIndex = null;   
+          $scope.pinToEdit = null; 
+        });
+      });  
+    }    
+
+    // collection and index were passed in to $scope.editPin
+    if ($scope.collectionToEdit !== undefined || $scope.pinToEditIndex !== undefined) { 
+      $scope.collectionToEdit.pins[$scope.pinToEditIndex] = updatedPin;
+      updatePinInCollection(updatedPin, $scope.collectionToEdit, $scope.pinToEditIndex);
+    } 
+    else if (updatedPin.collection_id !== undefined) {
+      // the pin is in an existing collection. modify both the pin and collection
+      // first we need to get the collection then find the index of the pin
+      $http.get('/api/pinCollections/' + updatedPin.collection_id).success(function(response) {
+        for(var i = 0; i < response.pins.length; i++) {
+          if (response.pins[i]._id === updatedPin._id) {
+            $scope.pinToEditIndex = i;
+            $scope.collectionToEdit = response;
+            console.log(response);
+            $scope.collectionToEdit.pins[$scope.pinToEditIndex] = updatedPin
+            break;
+          } 
+        }
+        updatePinInCollection(updatedPin, $scope.collectionToEdit, $scope.pinToEditIndex);
+      });
+    }
+    else if (updatedPin.collection_id === undefined) {
+      // the pin doesn't belong to a collection, we just change the pin itself.
+      $http.put('/api/pins/' + updatedPin._id, updatedPin).success(function(response) {
+        console.log(response);
         var test = document.getElementById('wrapper');
         test.style.opacity = 1.0;
-        $scope.showPinEdit = false;
-
-        // Lets variables be garbage collected to prevent mem leaks?
-        $scope.pinToEdit = null; 
-        $scope.collectionToEdit = null;
-        $scope.pinToEditIndex = null;         
+        $scope.showPinEdit = false;        
       });
-    });
+    }
   };  
 
   $scope.cancelEdit = function() {
@@ -137,8 +212,16 @@ angular.module('pinterestApp')
         $scope.getUsersPins();        
       });
     });
-
   };   
+
+  $scope.deleteBtnPressed = function() { 
+    $scope.showDeleteBox = true;
+    var editBox = document.getElementById('pin-edit-box-delete');
+    editBox.style.opacity = 0.3;
+
+    var deleteBoxArea = document.getElementById('del-box-area');
+    deleteBoxArea.style.margin = '0 auto';
+  };
 
 
   });

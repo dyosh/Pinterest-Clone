@@ -36,7 +36,7 @@
 .form-container {
     text-align: center;
     margin: 0 auto;
-    width: 450px;
+    width: 100%;
 }
 
 
@@ -169,6 +169,15 @@
 
 #pin-edit-container:hover {
     opacity: 1 !important;
+}
+
+#main-pg-author {
+    color: #62AABF;
+}
+
+#main-pg-author:hover {
+    cursor: pointer;
+    color: #62AABF;
 }
 
 /*#columns:hover .pin:not(:hover) {
